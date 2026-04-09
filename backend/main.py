@@ -8,10 +8,7 @@ import io
 import docx
 import PyPDF2
 
-# Import individual modules (Framework Pipelines)
-from modules.text_processing import process_text
-from modules.statistical_computation import compute_statistics
-from modules.output_generator import generate_text_report, generate_word_report
+# Modules will be imported lazily inside routes to prevent Vercel timeout on Cold Starts
 
 app = FastAPI(title="Sentence Profiler API")
 
@@ -22,6 +19,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.get("/")
+async def root():
+    return {"status": "ok", "message": "Sentence Profiler API is running"}
 
 # Simple in-memory storage for reports cache mapped by text hash
 report_cache = {}
@@ -56,6 +57,9 @@ async def profile_text(
         return {"status": "error", "message": "No text provided for analysis."}
 
     try:
+        from modules.text_processing import process_text
+        from modules.statistical_computation import compute_statistics
+        
         # Step 2: Processing Pipeline
         text_data = process_text(content)
         
@@ -77,6 +81,7 @@ async def profile_text(
 
 @app.get("/api/download/txt/{cache_id}")
 def download_txt(cache_id: str):
+    from modules.output_generator import generate_text_report
     if cache_id in report_cache:
         report = generate_text_report(report_cache[cache_id])
         return PlainTextResponse(
@@ -87,6 +92,7 @@ def download_txt(cache_id: str):
 
 @app.get("/api/download/docx/{cache_id}")
 def download_docx(cache_id: str):
+    from modules.output_generator import generate_word_report
     if cache_id in report_cache:
         stream = generate_word_report(report_cache[cache_id])
         return StreamingResponse(
@@ -96,9 +102,10 @@ def download_docx(cache_id: str):
         )
     return {"error": "Report not found or expired from cache."}
 
-# Mount frontend files properly
+# Frontend files are hosted separately on Vercel, 
+# but we keep this for local development if needed.
 frontend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../frontend"))
 if os.path.exists(frontend_dir):
-    app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="frontend")
+    app.mount("/static", StaticFiles(directory=frontend_dir, html=True), name="frontend")
 else:
     print(f"Warning: Frontend not found at {frontend_dir}")

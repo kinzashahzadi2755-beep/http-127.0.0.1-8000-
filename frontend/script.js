@@ -1,4 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Configurable API URL for production
+    const API_URL = (window.API_URL && window.API_URL !== "__API_URL_PLACEHOLDER__") 
+        ? window.API_URL 
+        : "https://YOUR_BACKEND_URL.onrender.com";
+
     const fileUpload = document.getElementById('file-upload');
     const fileName = document.getElementById('file-name');
     const analyzeBtn = document.getElementById('analyze-btn');
@@ -38,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
         analyzeBtn.disabled = true;
 
         try {
-            const response = await fetch('http://127.0.0.1:8000/api/profile', {
+            const response = await fetch(`${API_URL}/api/profile`, {
                 method: 'POST',
                 body: formData
             });
@@ -93,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('Analysis Error: ' + data.message);
             }
         } catch (error) {
-            alert('Error connecting to backend API. Ensure the fastAPI server is running locally.');
+            alert('Error connecting to backend API. Please check your connection or ensures the backend URL is correct.');
             console.error(error);
         } finally {
             analyzeBtn.textContent = originalBtnText;
@@ -103,13 +108,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     downloadTxtBtn.addEventListener('click', () => {
         if (currentCacheId) {
-            window.location.href = `http://127.0.0.1:8000/api/download/txt/${currentCacheId}`;
+            window.location.href = `${API_URL}/api/download/txt/${currentCacheId}`;
         }
     });
 
     downloadDocxBtn.addEventListener('click', () => {
         if (currentCacheId) {
-            window.location.href = `http://127.0.0.1:8000/api/download/docx/${currentCacheId}`;
+            window.location.href = `${API_URL}/api/download/docx/${currentCacheId}`;
         }
     });
 });
